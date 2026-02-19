@@ -1,3 +1,9 @@
+FROM golang:1.25-alpine as wacli-builder
+RUN apk add --no-cache git
+WORKDIR /wacli-build
+RUN git clone https://github.com/steipete/wacli.git .
+RUN go build -o wacli ./cmd/wacli
+
 FROM node:22-bookworm
 
 # Install Bun (required for build scripts)
@@ -23,6 +29,11 @@ COPY scripts ./scripts
 
 RUN pnpm install --frozen-lockfile
 
+# install jq for remote-code
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends jq \
+  && rm -rf /var/lib/apt/lists/*
+
 # Optionally install Chromium and Xvfb for browser automation.
 # Build with: docker build --build-arg OPENCLAW_INSTALL_BROWSER=1 ...
 # Adds ~300MB but eliminates the 60-90s Playwright install on every container start.
@@ -41,6 +52,10 @@ RUN pnpm build
 # Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
+
+# Copy wacli from builder stage
+COPY --from=wacli-builder /wacli-build/wacli /usr/local/bin/wacli
+RUN chmod +x /usr/local/bin/wacli
 
 ENV NODE_ENV=production
 

@@ -489,6 +489,13 @@ export function createGatewayHttpServer(opts: {
   async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     setDefaultSecurityHeaders(res);
 
+    // Handle CORS preflight requests
+    if (req.method === "OPTIONS" && process.env.OPENCLAW_CORS_ORIGIN) {
+      res.statusCode = 200;
+      res.end();
+      return;
+    }
+
     // Don't interfere with WebSocket upgrades; ws handles the 'upgrade' event.
     if (String(req.headers.upgrade ?? "").toLowerCase() === "websocket") {
       return;
@@ -506,6 +513,14 @@ export function createGatewayHttpServer(opts: {
         req.url = scopedCanvas.rewrittenUrl;
       }
       const requestPath = new URL(req.url ?? "/", "http://localhost").pathname;
+      
+      // Remove token from URL if present (for direct VM access from Remote Code)
+      // Token is already validated on Remote Code side
+      const url = new URL(req.url ?? "/", "http://localhost");
+      if (url.searchParams.has("token")) {
+        url.searchParams.delete("token");
+        req.url = url.toString().replace(url.origin, "");
+      }
       if (await handleHooksRequest(req, res)) {
         return;
       }
