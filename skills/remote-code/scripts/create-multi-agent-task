@@ -1,0 +1,45 @@
+#!/bin/bash
+# Create a multi-agent task
+# Usage: create-multi-agent-task <prompt> <agents_json> [repo_url] [branch]
+
+set -e
+
+if [ -z "$BLACKBOX_API_KEY" ]; then
+    echo "Error: BLACKBOX_API_KEY environment variable not set" >&2
+    exit 1
+fi
+
+if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: create-multi-agent-task <prompt> <agents_json> [repo_url] [branch]" >&2
+    echo "Example: create-multi-agent-task 'Add README' '[{\"agent\":\"claude\",\"model\":\"blackboxai/anthropic/claude-sonnet-4.5\"},{\"agent\":\"blackbox\",\"model\":\"blackboxai/blackbox-pro\"}]' 'https://github.com/user/repo.git' 'main'" >&2
+    exit 1
+fi
+
+PROMPT="$1"
+AGENTS="$2"
+REPO_URL="${3:-}"
+BRANCH="${4:-main}"
+
+# Build JSON payload
+JSON_PAYLOAD=$(cat <<EOF
+{
+  "prompt": "$PROMPT",
+  "selectedAgents": $AGENTS
+EOF
+)
+
+# Add optional fields if provided
+if [ -n "$REPO_URL" ]; then
+    JSON_PAYLOAD="$JSON_PAYLOAD,
+  \"repoUrl\": \"$REPO_URL\",
+  \"selectedBranch\": \"$BRANCH\""
+fi
+
+JSON_PAYLOAD="$JSON_PAYLOAD
+}"
+
+# Make API request
+curl -s -X POST 'https://cloud.blackbox.ai/api/tasks' \
+  -H "Authorization: Bearer $BLACKBOX_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d "$JSON_PAYLOAD" | jq .

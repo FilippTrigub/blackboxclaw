@@ -1,0 +1,49 @@
+#!/bin/bash
+# Wait for task completion with polling
+# Usage: wait-for-task <task_id> [poll_interval]
+
+set -e
+
+if [ -z "$BLACKBOX_API_KEY" ]; then
+    echo "Error: BLACKBOX_API_KEY environment variable not set" >&2
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: wait-for-task <task_id> [poll_interval]" >&2
+    echo "Example: wait-for-task 9qQe2F8Z_nXx9-eJA0BD6 2" >&2
+    exit 1
+fi
+
+TASK_ID="$1"
+POLL_INTERVAL="${2:-2}"
+
+echo "Waiting for task $TASK_ID to complete..."
+
+while true; do
+    # Get task status
+    RESPONSE=$(curl -s "https://cloud.blackbox.ai/api/tasks/$TASK_ID/status" \
+      -H "Authorization: Bearer $BLACKBOX_API_KEY" \
+      -H 'Accept: application/json')
+    
+    STATUS=$(echo "$RESPONSE" | jq -r '.status')
+    PROGRESS=$(echo "$RESPONSE" | jq -r '.progress')
+    IS_DONE=$(echo "$RESPONSE" | jq -r '.isDone')
+    ERROR=$(echo "$RESPONSE" | jq -r '.error')
+    
+    echo "Task $TASK_ID: $STATUS ($PROGRESS%)"
+    
+    if [ "$IS_DONE" = "true" ]; then
+        if [ "$STATUS" = "completed" ]; then
+            echo "Task completed successfully!"
+            echo "$RESPONSE" | jq .
+            exit 0
+        else
+            echo "Task failed: $ERROR" >&2
+            echo "$RESPONSE" | jq .
+            exit 1
+        fi
+    fi
+    
+    sleep "$POLL_INTERVAL"
+done

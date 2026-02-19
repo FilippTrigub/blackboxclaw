@@ -1,0 +1,28 @@
+#!/bin/bash
+# Stream task logs in real-time
+# Usage: stream-logs <task_id> [from_index] [include_status]
+
+set -e
+
+if [ -z "$BLACKBOX_API_KEY" ]; then
+    echo "Error: BLACKBOX_API_KEY environment variable not set" >&2
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: stream-logs <task_id> [from_index] [include_status]" >&2
+    echo "Example: stream-logs 9qQe2F8Z_nXx9-eJA0BD6 0 true" >&2
+    exit 1
+fi
+
+TASK_ID="$1"
+FROM_INDEX="${2:-0}"
+INCLUDE_STATUS="${3:-true}"
+
+# Build query parameters
+QUERY="fromIndex=$FROM_INDEX&includeStatus=$INCLUDE_STATUS"
+
+# Make API request with streaming
+curl -N "https://cloud.blackbox.ai/api/tasks/$TASK_ID/stream?$QUERY" \
+  -H "Authorization: Bearer $BLACKBOX_API_KEY" \
+  -H 'Accept: text/event-stream'

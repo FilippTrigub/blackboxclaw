@@ -1,0 +1,23 @@
+#!/bin/bash
+# Get task status
+# Usage: get-task-status <task_id>
+
+set -e
+
+if [ -z "$BLACKBOX_API_KEY" ]; then
+    echo "Error: BLACKBOX_API_KEY environment variable not set" >&2
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: get-task-status <task_id>" >&2
+    echo "Example: get-task-status 9qQe2F8Z_nXx9-eJA0BD6" >&2
+    exit 1
+fi
+
+TASK_ID="$1"
+
+# Make API request
+curl -s "https://cloud.blackbox.ai/api/tasks/$TASK_ID/status" \
+  -H "Authorization: Bearer $BLACKBOX_API_KEY" \
+  -H 'Accept: application/json' | jq .

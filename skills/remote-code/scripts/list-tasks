@@ -1,0 +1,26 @@
+#!/bin/bash
+# List tasks with filtering and pagination
+# Usage: list-tasks [limit] [offset] [filter] [status]
+
+set -e
+
+if [ -z "$BLACKBOX_API_KEY" ]; then
+    echo "Error: BLACKBOX_API_KEY environment variable not set" >&2
+    exit 1
+fi
+
+LIMIT="${1:-50}"
+OFFSET="${2:-0}"
+FILTER="${3:-all}"
+STATUS="${4:-}"
+
+# Build query parameters
+QUERY="limit=$LIMIT&offset=$OFFSET&filter=$FILTER"
+if [ -n "$STATUS" ]; then
+    QUERY="$QUERY&status=$STATUS"
+fi
+
+# Make API request
+curl -s "https://cloud.blackbox.ai/api/tasks?$QUERY" \
+  -H "Authorization: Bearer $BLACKBOX_API_KEY" \
+  -H 'Accept: application/json' | jq .
