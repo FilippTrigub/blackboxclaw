@@ -1,0 +1,12 @@
+{
+  "id": "whatsapp-kapso",
+  "name": "WhatsApp (Kapso)",
+  "description": "WhatsApp messaging via Kapso.ai webhook (no pairing required)",
+  "version": "1.0.0",
+  "type": "channel",
+  "entry": "index.ts",
+  "dependencies": [],
+  "capabilities": {
+    "channels": ["whatsapp-kapso"]
+  }
+}

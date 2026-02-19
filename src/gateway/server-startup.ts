@@ -11,6 +11,7 @@ import type { CliDeps } from "../cli/deps.js";
 import type { loadConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
 import { startGmailWatcher } from "../hooks/gmail-watcher.js";
+import { registerWhatsAppKapsoWebhook } from "../whatsapp-kapso/webhook-handler.js";
 import {
   clearInternalHooks,
   createInternalHookEvent,
@@ -82,6 +83,18 @@ export async function startGatewaySidecars(params: {
       }
     } catch (err) {
       params.logHooks.error(`gmail watcher failed to start: ${String(err)}`);
+    }
+  }
+
+  // Register WhatsApp-Kapso webhook handler if configured
+  if (params.cfg.channels?.whatsappKapso?.enabled) {
+    try {
+      registerWhatsAppKapsoWebhook({
+        log: (msg) => params.logChannels.info(msg),
+      });
+      params.logChannels.info("whatsapp-kapso webhook handler registered");
+    } catch (err) {
+      params.logChannels.error(`whatsapp-kapso webhook registration failed: ${String(err)}`);
     }
   }
 

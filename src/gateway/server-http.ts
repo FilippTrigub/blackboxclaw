@@ -19,6 +19,7 @@ import { loadConfig } from "../config/config.js";
 import type { createSubsystemLogger } from "../logging/subsystem.js";
 import { safeEqualSecret } from "../security/secret-equal.js";
 import { handleSlackHttpRequest } from "../slack/http/index.js";
+import { handleWhatsAppKapsoHttpRequest } from "../whatsapp-kapso/http/index.js";
 import type { AuthRateLimiter } from "./auth-rate-limit.js";
 import {
   authorizeGatewayConnect,
@@ -496,6 +497,9 @@ export function createGatewayHttpServer(opts: {
         return;
       }
       if (await handleSlackHttpRequest(req, res)) {
+        return;
+      }
+      if (await handleWhatsAppKapsoHttpRequest(req, res)) {
         return;
       }
       if (handlePluginRequest) {

@@ -1,0 +1,18 @@
+{
+  "name": "@openclaw/extension-whatsapp-kapso",
+  "version": "1.0.0",
+  "description": "WhatsApp channel via Kapso.ai (webhook-based, no pairing)",
+  "type": "module",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "keywords": [
+    "openclaw",
+    "whatsapp",
+    "kapso",
+    "channel"
+  ],
+  "author": "OpenClaw",
+  "license": "MIT"
+}
