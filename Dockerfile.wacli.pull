@@ -1,0 +1,6 @@
+FROM yourdockerhubuser/openclaw-wacli:latest
+
+# No build steps needed -- everything is pre-built in the pushed image.
+# Override CMD/env at runtime via docker-compose or docker run.
+
+CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured"]
