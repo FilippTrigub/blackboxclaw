@@ -11,6 +11,15 @@ import { readJsonBody } from "./hooks.js";
 export function setDefaultSecurityHeaders(res: ServerResponse) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
+
+  // Add CORS headers if configured
+  const corsOrigin = process.env.OPENCLAW_CORS_ORIGIN;
+  if (corsOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", corsOrigin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  }
 }
 
 export function sendJson(res: ServerResponse, status: number, body: unknown) {
