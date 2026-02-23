@@ -12,6 +12,36 @@ ENV PATH="/root/.bun/bin:${PATH}"
 
 RUN corepack enable
 
+# Install dependencies for Homebrew
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        build-essential \
+        procps \
+        file \
+        git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Homebrew (for skill installations)
+# Install to /home/node/.linuxbrew so the node user owns it
+RUN mkdir -p /home/node/.linuxbrew && \
+    chown -R node:node /home/node/.linuxbrew
+
+USER node
+ENV HOMEBREW_PREFIX="/home/node/.linuxbrew"
+RUN git clone https://github.com/Homebrew/brew ${HOMEBREW_PREFIX}/Homebrew && \
+    mkdir -p ${HOMEBREW_PREFIX}/bin && \
+    ln -s ${HOMEBREW_PREFIX}/Homebrew/bin/brew ${HOMEBREW_PREFIX}/bin/brew
+
+USER root
+RUN echo 'eval "$(/home/node/.linuxbrew/bin/brew shellenv)"' >> /etc/profile.d/brew.sh && \
+    chmod 755 /etc/profile.d/brew.sh
+
+# Install gogcli (Google OAuth CLI for Gmail skills)
+RUN curl -fsSL https://github.com/steipete/gogcli/releases/download/v0.11.0/gogcli_0.11.0_linux_amd64.tar.gz | \
+    tar xz -C /usr/local/bin gog && \
+    chmod +x /usr/local/bin/gog
+
 WORKDIR /app
 RUN chown node:node /app
 
@@ -29,9 +59,21 @@ COPY --chown=node:node patches ./patches
 COPY --chown=node:node scripts ./scripts
 
 USER node
+
+# Set up pnpm global bin directory
+ENV PNPM_HOME="/home/node/.local/share/pnpm"
+ENV PATH="${PNPM_HOME}:${PATH}"
+RUN mkdir -p ${PNPM_HOME} && \
+    pnpm config set global-bin-dir ${PNPM_HOME} && \
+    pnpm config set global-dir /home/node/.local/share/pnpm/global
+
+# Add Homebrew to PATH for the node user
+ENV PATH="/home/node/.linuxbrew/bin:${PATH}"
+
 RUN pnpm install --frozen-lockfile
 
 # install jq for remote-code
+USER root
 RUN apt-get update \
   && apt-get install -y --no-install-recommends jq \
   && rm -rf /var/lib/apt/lists/*
@@ -61,6 +103,7 @@ ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
 
 # Copy wacli from builder stage
+USER root
 COPY --from=wacli-builder /wacli-build/wacli /usr/local/bin/wacli
 RUN chmod +x /usr/local/bin/wacli
 
